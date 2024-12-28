@@ -1,46 +1,9 @@
-// pipeline {
-//     agent any
-
-//     // triggers {
-//     //     // Trigger pipeline on changes pushed to the GitHub repository
-//     //     pollSCM('H/5 * * * *') // Polls the repository every 5 minutes
-//     // }
-
-//     stages {
-//         stage('Checkout') {
-//             steps {
-//                 echo 'Checking out code from GitHub...'
-//                 checkout scm
-//             }
-//         }
-//         stage('Build') {
-//             steps {
-//                 echo 'Building the application...'
-//                 // Add your build commands here
-//                 sh 'echo Build stage running'
-//             }
-//         }
-//         stage('Test') {
-//             steps {
-//                 echo 'Running tests...'
-//                 // Add your test commands here
-//                 sh 'echo Test stage running'
-//             }
-//         }
-//     }
-//     post {
-//         always {
-//             echo 'Pipeline finished.'
-//         }
-//     }
-// }
-
-
 pipeline {
     agent any
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('docker-cred')
         DOCKER_HUB_USERNAME = "${DOCKER_HUB_CREDENTIALS_USR}"
+        KUBECONFIG_CREDENTIALS = credentials('k8s-cred')
     }
     stages {
         stage('Checkout Code') {
@@ -76,6 +39,16 @@ pipeline {
         //         sh 'kubectl apply -f k8s/'
         //     }
         // }
+        // stage('Deploy to Kubernetes') {
+        //     steps {
+        //         withCredentials([file(credentialsId: 'k8s-cred', variable: 'KUBECONFIG')]) {
+        //             sh '''
+        //             kubectl apply -f k8s/deployment.yaml
+        //             kubectl apply -f k8s/service.yaml
+        //             '''
+        //         }
+        //     }
+        // }
         stage('Build Frontend') {
             when {
                 changeset "frontend/**"
@@ -104,41 +77,19 @@ pipeline {
         //         sh 'kubectl apply -f k8s/'
         //     }
         // }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'k8s-cred', variable: 'KUBECONFIG')]) {
+                    sh '''
+                    kubectl apply -f k8s/deployment.yaml -n my-namespace
+                    kubectl apply -f k8s/service.yaml -n my-namespace
+                    '''
+                }
+            }
+        }
     }
 }
-
-// pipeline {
-//     agent any
-//     environment {
-//         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
-//     }
-//     stages {
-//         stage('Checkout Code') {
-//             steps {
-//                 git 'https://github.com/your-repo.git'
-//             }
-//         }
-//         stage('Build Docker Images') {
-//             steps {
-//                 sh 'docker build -t your-dockerhub-username/backend:latest ./backend'
-//                 sh 'docker build -t your-dockerhub-username/frontend:latest ./frontend'
-//             }
-//         }
-//         stage('Push to Docker Hub') {
-//             steps {
-//                 sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-//                 sh 'docker push your-dockerhub-username/backend:latest'
-//                 sh 'docker push your-dockerhub-username/frontend:latest'
-//             }
-//         }
-//         stage('Deploy to Kubernetes') {
-//             steps {
-//                 kubectlApply()
-//             }
-//         }
-//     }
-// }
-
 // def kubectlApply() {
 //     sh '''
 //     kubectl apply -f k8s/configmap.yaml
