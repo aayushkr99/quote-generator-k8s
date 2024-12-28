@@ -1,10 +1,10 @@
 pipeline {
     agent any
 
-    // triggers {
-    //     // Trigger pipeline on changes pushed to the GitHub repository
-    //     pollSCM('H/5 * * * *') // Polls the repository every 5 minutes
-    // }
+    triggers {
+        // Trigger pipeline on changes pushed to the GitHub repository
+        pollSCM('H/5 * * * *') // Polls the repository every 5 minutes
+    }
 
     stages {
         stage('Checkout') {
